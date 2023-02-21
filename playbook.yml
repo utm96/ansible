@@ -19,18 +19,41 @@
       ansible.builtin.apt:
         name: "{{app_packages}}"
         state: present
-    - name: document root exist
-      become : true
-      ansible.builtin.file:
-        path: "{{app_directory}}"
+    - name: Create document root
+      become: true
+      file:
+        path: "{{ app_directory }}"
+        owner: "{{ app_user }}"
         state: directory
-        recurse: yes
-        mode: '1777'
-    - name: open firewall
-      community.general.ufw:
-        rule: allow
-        port: "80"
-        proto: tcp
-    - name: run
-      ansible.builtin.command: firewall-cmd --permanent --add-port=8080/tcp --zone=public && firewall-cmd --reload
-      changed_when: false
+        mode: '0755'
+    - name: Copy index test page
+      template:
+        src: "templates/index.html.j2"
+        dest: "{{ app_directory }}/index.html"
+    - name: ensure services started
+      ansible.builtin.service:
+        name: "{{item}}"
+        state: started
+      loop: "{{app_packages}}"
+    - name: "Allow HTTP on port {{ http_port }}"
+      become: true
+      ansible.posix.firewalld:
+        port: 80/tcp
+        permanent: true
+        state: enabled
+        zone: public
+    - name: ensure services reloaded
+      become: true
+      ansible.builtin.service:
+        name: "{{item}}"
+        state: reloaded
+      loop: "{{app_packages}}"
+    - name: Pause play until a URL is reachable from this host
+      ansible.builtin.uri:
+        url: "http://localhost:80"
+        follow_redirects: none
+        method: GET
+      register: _result
+      until: _result.status == 200
+      retries: 720 # 720 * 5 seconds = 1hour (60*60/5)
+      delay: 5 # Every 5 seconds

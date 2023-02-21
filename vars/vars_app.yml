@@ -10,4 +10,13 @@ app_packages:
   - "firewalld"
 app_directory: "/var/www/html"
 
-app_name: ""
+app_name: "minhut"
+app_user: "cloud"
+http_port: "80"
+
+app_movies:
+  - title: "film1"
+    director: "minhut"
+  - title: "film2"
+    director: "minhuté"
+
