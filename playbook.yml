@@ -1,0 +1,36 @@
+- name: Web app deployment
+  hosts: servers
+  become: false
+  any_errors_fatal: true
+  vars_files:
+    - "./vars/vars_app.yml"
+  tasks:
+    - name: set nameservers
+      become: true
+      ansible.builtin.lineinfile:
+        path: "/etc/resolv.conf"
+        line: "nameserver 8.8.8.8"
+    - name: Listez le contenu du /home/cloud
+      ansible.builtin.command: ls /home/cloud
+      register: home_cloud
+      changed_when: false
+    - name: Install packages
+      become: true
+      ansible.builtin.apt:
+        name: "{{app_packages}}"
+        state: present
+    - name: document root exist
+      become : true
+      ansible.builtin.file:
+        path: "{{app_directory}}"
+        state: directory
+        recurse: yes
+        mode: '1777'
+    - name: open firewall
+      community.general.ufw:
+        rule: allow
+        port: "80"
+        proto: tcp
+    - name: run
+      ansible.builtin.command: firewall-cmd --permanent --add-port=8080/tcp --zone=public && firewall-cmd --reload
+      changed_when: false

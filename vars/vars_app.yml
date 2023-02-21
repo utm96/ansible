@@ -1,0 +1,13 @@
+app_dir: "/app"
+app_files:
+  - "configuration.json"
+  - "app.conf"
+app_another_list:
+  - name: "minh"
+    lastname: "uong"
+app_packages:
+  - "apache2"
+  - "firewalld"
+app_directory: "/var/www/html"
+
+app_name: ""
