@@ -42,18 +42,20 @@
         permanent: true
         state: enabled
         zone: public
-    - name: ensure services reloaded
+      register: fw
+    - name: restart firewalld if needed
       become: true
       ansible.builtin.service:
-        name: "{{item}}"
-        state: reloaded
-      loop: "{{app_packages}}"
+        name: "firewalld"
+        state: restarted
+      when: fw.changed
     - name: Pause play until a URL is reachable from this host
+      delegate_to: localhost
       ansible.builtin.uri:
-        url: "http://localhost:80"
+        url: "http://{{ inventory_hostname }}:80"
         follow_redirects: none
         method: GET
       register: _result
       until: _result.status == 200
-      retries: 720 # 720 * 5 seconds = 1hour (60*60/5)
+      retries: 10 # 720 * 5 seconds = 1hour (60*60/5)
       delay: 5 # Every 5 seconds
